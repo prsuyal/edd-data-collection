@@ -1,90 +1,295 @@
 "use client";
+import { useRef, useState, useEffect } from "react";
+import HolisticTracker from "../components/HolisticTracker";
 
-import { useEffect, useRef } from "react";
+const ALLOWED_NAMES = [
+  "pranshu suyal",
+  "abhinav kartik",
+  "suchit basineni",
+  "rohit kottomtharayil",
+  "pramya surapaneni",
+  "ayan patel",
+  "jason wong",
+  "sashreek bhupathiraju",
+  "om agrawal",
+  "minghan li",
+];
 
-export default function HolisticTracker() {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+const GESTURES = [
+  "smile",
+  "frown",
+  "nod",
+  "head shake (like you're saying no)",
+  "shrug",
+  "one eyebrow raised (like you're skeptical)",
+  "both eyebrows raised (like woah/shocked)",
+  "eyeroll",
+  "thumbs up",
+  "wave",
+  "wink",
+  "middle finger",
+  "crossed arms",
+  "facepalm",
+  "hands on hips",
+  "scratching head",
+  "pointing left",
+  "pointing right",
+  "pointing forward",
+  "looking away (just look away from the camera)",
+];
 
-  useEffect(() => {
-    const setupHolistic = async () => {
-      const mpHolistic = await import("@mediapipe/holistic");
-      const { drawLandmarks, drawConnectors } = await import("@mediapipe/drawing_utils");
-      const holistic = new mpHolistic.Holistic({
-        locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${file}`,
-      });
+export default function Page() {
+  const [name, setName] = useState("");
+  const [allowed, setAllowed] = useState(false);
 
-      holistic.setOptions({
-        modelComplexity: 2,
-        smoothLandmarks: true,
-        enableSegmentation: false,
-        refineFaceLandmarks: true,
-        minDetectionConfidence: 0.5,
-        minTrackingConfidence: 0.5,
-      });
-
-      holistic.onResults((results: any) => {
-        const canvasElement = canvasRef.current;
-        const canvasCtx = canvasElement?.getContext("2d");
-        if (!canvasCtx || !canvasElement) return;
-
-        canvasCtx.save();
-        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-        canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
-
-        const minimalStyle = {
-          radius: 0.5,
-          lineWidth: 0.5,
-          color: 'rgba(255,255,255,0.8)',
-          fillColor: 'rgba(255,255,255,0.2)',
-        };
-        
-        drawConnectors(canvasCtx, results.poseLandmarks, mpHolistic.POSE_CONNECTIONS, minimalStyle);
-        drawLandmarks(canvasCtx, results.poseLandmarks, minimalStyle);
-
-        drawConnectors(canvasCtx, results.leftHandLandmarks, mpHolistic.HAND_CONNECTIONS, minimalStyle);
-        drawLandmarks(canvasCtx, results.leftHandLandmarks, minimalStyle);
-
-        drawConnectors(canvasCtx, results.rightHandLandmarks, mpHolistic.HAND_CONNECTIONS, minimalStyle);
-        drawLandmarks(canvasCtx, results.rightHandLandmarks, minimalStyle);
-
-        drawLandmarks(canvasCtx, results.faceLandmarks, minimalStyle);
-
-        canvasCtx.restore();
-      });
-
-      const camera = new (await import("@mediapipe/camera_utils")).Camera(videoRef.current!, {
-        onFrame: async () => {
-          await holistic.send({ image: videoRef.current! });
-        },
-        width: 640,
-        height: 480,
-      });
-
-      camera.start();
-    };
-
-    setupHolistic();
-  }, []);
+  const handleSubmit = () => {
+    const lowerName = name.trim().toLowerCase();
+    if (ALLOWED_NAMES.includes(lowerName)) {
+      setAllowed(true);
+    } else {
+      alert("sorry, you are not on the allowed list.");
+    }
+  };
 
   return (
-    <div className="relative w-full h-auto flex flex-col items-center">
-      <video
-        ref={videoRef}
-        className="absolute top-0 left-0 w-full h-auto invisible"
-        autoPlay
-        playsInline
-        muted
-      />
-      <canvas
-        ref={canvasRef}
-        width={640}
-        height={480}
-        className="rounded-lg shadow-lg border border-gray-300"
-      />
-      <p className="mt-4 text-sm text-center text-gray-500">
-        holistic tracker
-      </p>
+    <>
+      {!allowed ? (
+        <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 bg-black text-white font-sans">
+          <div className="text-2xl font-bold">
+            pls type ur full name to login
+          </div>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSubmit();
+            }}
+            className="px-4 py-2 rounded-full bg-black text-white border border-white focus:outline-none focus:border-gray-400"
+            placeholder="e.g. lionel messi"
+          />
+          <button
+            onClick={handleSubmit}
+            className="px-6 py-3 rounded-full bg-black text-white border border-white hover:bg-white hover:text-black transition"
+          >
+            submit
+          </button>
+        </div>
+      ) : (
+        <GestureCollector userName={name.trim().toLowerCase()} />
+      )}
+    </>
+  );
+}
+function GestureCollector({ userName }: { userName: string }) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [status, setStatus] = useState("idle");
+  const [timeLeft, setTimeLeft] = useState(180);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const frameData = useRef<any[]>([]);
+  const csvSaved = useRef(false);
+  const currentGesture = GESTURES[currentIndex];
+  const isLast = currentIndex === GESTURES.length - 1;
+  const firstName = userName.split(" ")[0];
+
+  const start = () => {
+    frameData.current = [];
+    csvSaved.current = false;
+    setStatus("running");
+    setTimeLeft(180);
+    intervalRef.current = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(intervalRef.current!);
+          intervalRef.current = null;
+          setTimeout(() => {
+            if (frameData.current.length > 0 && !csvSaved.current) {
+              forceSaveCSV();
+            } else if (frameData.current.length === 0) {
+              alert("no frames captured! pls try again.");
+              setStatus("idle");
+            }
+          }, 300);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const pause = () => {
+    clearInterval(intervalRef.current!);
+    intervalRef.current = null;
+    setStatus("paused");
+  };
+
+  const resume = () => {
+    setStatus("running");
+    intervalRef.current = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(intervalRef.current!);
+          intervalRef.current = null;
+          setTimeout(() => {
+            if (frameData.current.length > 0 && !csvSaved.current) {
+              forceSaveCSV();
+            } else if (frameData.current.length === 0) {
+              alert("no frames captured! pls try again.");
+              setStatus("idle");
+            }
+          }, 300);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const onFrameData = (frame: any) => {
+    if (status === "running") {
+      frameData.current.push(frame);
+    }
+  };
+
+  const forceSaveCSV = () => {
+    if (csvSaved.current) return;
+    csvSaved.current = true;
+    if (!frameData.current.length) return;
+    const rows: string[] = [];
+    const header = [
+      "id",
+      "timestamp",
+      "gesture",
+      "type",
+      "index",
+      "x",
+      "y",
+      "z",
+      "visibility",
+    ];
+    rows.push(header.join(","));
+    for (const frame of frameData.current) {
+      const timestamp = frame.timestamp;
+      if (frame.fallbackData) {
+        frame.fallbackData.forEach((l: any, i: number) => {
+          rows.push(
+            [
+              userName,
+              timestamp,
+              currentGesture,
+              "fallback",
+              i,
+              l.x ?? "",
+              l.y ?? "",
+              l.z ?? "",
+              l.visibility ?? "",
+            ].join(",")
+          );
+        });
+      }
+      for (const [type, landmarks] of Object.entries(frame)) {
+        if (type === "timestamp" || type === "fallbackData" || !landmarks) {
+          continue;
+        }
+        if (Array.isArray(landmarks)) {
+          landmarks.forEach((l: any, i: number) => {
+            rows.push(
+              [
+                userName,
+                timestamp,
+                currentGesture,
+                type,
+                i,
+                l.x ?? "",
+                l.y ?? "",
+                l.z ?? "",
+                l.visibility ?? "",
+              ].join(",")
+            );
+          });
+        }
+      }
+    }
+    const blob = new Blob([rows.join("\n")], {
+      type: "text/csv;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `gesture-${userName}-${currentGesture
+      .replace(/\s+/g, "_")
+      .toLowerCase()}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    setStatus("idle");
+    setTimeout(() => {
+      if (!isLast) {
+        setCurrentIndex((i) => i + 1);
+      } else {
+        setStatus("done");
+      }
+    }, 500);
+  };
+
+  const formatTime = (sec: number) => {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center gap-6 p-6 bg-black text-white font-sans">
+      <div className="text-xl text-gray-400">helllooo {firstName} 👋</div>
+      <div className="text-3xl font-bold text-center">
+        {status === "done"
+          ? "all gestures recorded!"
+          : `current gesture: ${currentGesture}`}
+      </div>
+      <div className="relative w-[640px] h-[480px] rounded-xl overflow-hidden border border-white/10 shadow-lg bg-black">
+        <HolisticTracker status={status} onFrameData={onFrameData} />
+        {(status === "running" || status === "paused") && (
+          <div className="absolute top-4 left-4 px-4 py-2 bg-black/70 text-white text-2xl rounded-full">
+            ⏱ {formatTime(timeLeft)}
+            {status === "paused" && " (paused)"}
+          </div>
+        )}
+      </div>
+      <div className="flex gap-4">
+        {status === "idle" && (
+          <button
+            onClick={start}
+            className="px-6 py-3 rounded-full bg-black text-white border border-white hover:bg-white hover:text-black transition"
+          >
+            start
+          </button>
+        )}
+        {status === "running" && (
+          <button
+            onClick={pause}
+            className="px-6 py-3 rounded-full bg-black text-white border border-white hover:bg-white hover:text-black transition"
+          >
+            pause
+          </button>
+        )}
+        {status === "paused" && (
+          <button
+            onClick={resume}
+            className="px-6 py-3 rounded-full bg-black text-white border border-white hover:bg-white hover:text-black transition"
+          >
+            resume
+          </button>
+        )}
+      </div>
+      {status === "done" && (
+        <p className="text-lg text-gray-300 font-medium">
+          all gestures collected and saved. thanks {firstName} !!!
+        </p>
+      )}
+      <div className="text-sm text-gray-500">
+        progress: {currentIndex + 1} / {GESTURES.length} gestures
+      </div>
     </div>
   );
 }
