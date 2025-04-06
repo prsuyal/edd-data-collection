@@ -138,8 +138,8 @@ export default function HolisticTracker({
               await holistic.send({ image: videoRef.current });
             }
           },
-          width: 640,
-          height: 480,
+          width: 800,
+          height: 600,
         });
         cameraRef.current = camera;
         await camera.start();
@@ -164,8 +164,8 @@ export default function HolisticTracker({
       />
       <canvas
         ref={canvasRef}
-        width={640}
-        height={480}
+        width={800}
+        height={600}
         className="rounded-xl shadow-lg border border-white bg-black"
       />
       <div className="absolute bottom-4 left-4 px-3 py-1 rounded-full bg-black text-white text-sm">

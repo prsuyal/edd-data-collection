@@ -247,7 +247,7 @@ function GestureCollector({ userName }: { userName: string }) {
           ? "all gestures recorded!"
           : `current gesture: ${currentGesture}`}
       </div>
-      <div className="relative w-[640px] h-[480px] rounded-xl overflow-hidden border border-white/10 shadow-lg bg-black">
+      <div className="relative w-[800px] h-[600px] rounded-xl overflow-hidden border border-white/10 shadow-lg bg-black">
         <HolisticTracker status={status} onFrameData={onFrameData} />
         {(status === "running" || status === "paused") && (
           <div className="absolute top-4 left-4 px-4 py-2 bg-black/70 text-white text-2xl rounded-full">
