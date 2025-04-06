@@ -13,6 +13,7 @@
     "@mediapipe/drawing_utils": "^0.3.1675466124",
     "@mediapipe/holistic": "^0.5.1675471629",
     "@supabase/supabase-js": "^2.49.4",
+    "fireworks-js": "^2.10.8",
     "next": "15.2.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

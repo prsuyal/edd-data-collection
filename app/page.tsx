@@ -81,6 +81,7 @@ export default function Page() {
     </>
   );
 }
+
 function GestureCollector({ userName }: { userName: string }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [status, setStatus] = useState("idle");
@@ -256,13 +257,29 @@ function GestureCollector({ userName }: { userName: string }) {
           </div>
         )}
       </div>
-      <div className="flex gap-4">
+      <div className="flex items-center gap-2">
+        {status === "idle" && currentIndex > 0 && (
+          <button
+            onClick={() => setCurrentIndex((i) => i - 1)}
+            className="px-3 py-2 rounded-full bg-black text-white border border-white hover:bg-white hover:text-black transition"
+          >
+            ←
+          </button>
+        )}
         {status === "idle" && (
           <button
             onClick={start}
             className="px-6 py-3 rounded-full bg-black text-white border border-white hover:bg-white hover:text-black transition"
           >
             start
+          </button>
+        )}
+        {status === "idle" && currentIndex < GESTURES.length - 1 && (
+          <button
+            onClick={() => setCurrentIndex((i) => i + 1)}
+            className="px-3 py-2 rounded-full bg-black text-white border border-white hover:bg-white hover:text-black transition"
+          >
+            →
           </button>
         )}
         {status === "running" && (
