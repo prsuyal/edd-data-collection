@@ -13,6 +13,8 @@ const ALLOWED_NAMES = [
   "sashreek bhupathiraju",
   "om agrawal",
   "minghan li",
+  "mihir macwan",
+  "gajan mohan raj"
 ];
 
 const GESTURES = [
