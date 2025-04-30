@@ -87,7 +87,7 @@ export default function Page() {
 function GestureCollector({ userName }: { userName: string }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [status, setStatus] = useState("idle");
-  const [timeLeft, setTimeLeft] = useState(180);
+  const [timeLeft, setTimeLeft] = useState(60);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const frameData = useRef<any[]>([]);
   const csvSaved = useRef(false);
@@ -99,7 +99,7 @@ function GestureCollector({ userName }: { userName: string }) {
     frameData.current = [];
     csvSaved.current = false;
     setStatus("running");
-    setTimeLeft(180);
+    setTimeLeft(60);
     intervalRef.current = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
