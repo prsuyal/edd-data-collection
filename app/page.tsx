@@ -14,7 +14,8 @@ const ALLOWED_NAMES = [
   "om agrawal",
   "minghan li",
   "mihir macwan",
-  "gajan mohan raj"
+  "gajan mohan raj",
+  "desmond pepe"
 ];
 
 const GESTURES = [
